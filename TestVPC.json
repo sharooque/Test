@@ -1,0 +1,210 @@
+{
+    "AWSTemplateFormatVersion": "2010-09-09",
+    "Description": "Launch EC2 instance into custom VPC",
+    "Parameters" : {
+
+    "CidrBlock":{
+        "Description" : "The Cidr Block for VPC 1",
+        "Type": "String",
+        "MinLength":"9",
+        "MaxLength":"18",
+        "Default":"10.0.0.0/16",
+        "AllowedPattern": "(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})/(\\d{1,2})",
+        "ConstraintDescription": "must be a valid IP CIDR range of the form x.x.x.x/x."
+    },
+
+    "AZ1":{
+        "Description":"Availability zone for first subnet",
+        "Type":"AWS::EC2::AvailabilityZone::Name"
+    },
+
+    "SubnetCidr1":{
+        "AllowedPattern":"(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})/(\\d{1,2})",
+        "Default":"10.0.0.0/24",
+        "Description":"Cidr block for first subnet",
+        "Type":"String"
+    },
+
+    "EC2Type" : {
+      "Description" : "EC2 Instance type",
+      "Type" : "String",
+      "Default" : "t2.micro",
+      "AllowedValues" : [ "t1.micro", "t2.nano", "t2.micro", "t2.small", "t2.medium", "t2.large", "m1.small", "m1.medium", "m1.large", "m1.xlarge", "m2.xlarge", "m2.2xlarge", "m2.4xlarge", "m3.medium", "m3.large", "m3.xlarge", "m3.2xlarge", "m4.large", "m4.xlarge", "m4.2xlarge", "m4.4xlarge", "m4.10xlarge", "c1.medium", "c1.xlarge", "c3.large", "c3.xlarge", "c3.2xlarge", "c3.4xlarge", "c3.8xlarge", "c4.large", "c4.xlarge", "c4.2xlarge", "c4.4xlarge", "c4.8xlarge", "g2.2xlarge", "g2.8xlarge", "r3.large", "r3.xlarge", "r3.2xlarge", "r3.4xlarge", "r3.8xlarge", "i2.xlarge", "i2.2xlarge", "i2.4xlarge", "i2.8xlarge", "d2.xlarge", "d2.2xlarge", "d2.4xlarge", "d2.8xlarge", "hs1.8xlarge", "cr1.8xlarge", "cc2.8xlarge"],
+      "ConstraintDescription" : "Must be a valid EC2 instance type"
+    },
+
+    "KeyName" : {
+      "Description" : "Key pair to allow SSH access to the instance",
+      "Type" : "AWS::EC2::KeyPair::KeyName",
+      "ConstraintDescription" : "Must be the name of an existing EC2 KeyPair."
+    }
+    },
+
+    "Mappings" : {
+        "AWSInstanceType2Arch" : {
+          "t1.micro"    : { "Arch" : "HVM64"  },
+          "t2.nano"     : { "Arch" : "HVM64"  },
+          "t2.micro"    : { "Arch" : "HVM64"  },
+          "t2.small"    : { "Arch" : "HVM64"  },
+          "t2.medium"   : { "Arch" : "HVM64"  },
+          "t2.large"    : { "Arch" : "HVM64"  },
+          "m1.small"    : { "Arch" : "HVM64"  },
+          "m1.medium"   : { "Arch" : "HVM64"  },
+          "m1.large"    : { "Arch" : "HVM64"  },
+          "m1.xlarge"   : { "Arch" : "HVM64"  },
+          "m2.xlarge"   : { "Arch" : "HVM64"  },
+          "m2.2xlarge"  : { "Arch" : "HVM64"  },
+          "m2.4xlarge"  : { "Arch" : "HVM64"  },
+          "m3.medium"   : { "Arch" : "HVM64"  },
+          "m3.large"    : { "Arch" : "HVM64"  },
+          "m3.xlarge"   : { "Arch" : "HVM64"  },
+          "m3.2xlarge"  : { "Arch" : "HVM64"  },
+          "m4.large"    : { "Arch" : "HVM64"  },
+          "m4.xlarge"   : { "Arch" : "HVM64"  },
+          "m4.2xlarge"  : { "Arch" : "HVM64"  },
+          "m4.4xlarge"  : { "Arch" : "HVM64"  },
+          "m4.10xlarge" : { "Arch" : "HVM64"  },
+          "c1.medium"   : { "Arch" : "HVM64"  },
+          "c1.xlarge"   : { "Arch" : "HVM64"  },
+          "c3.large"    : { "Arch" : "HVM64"  },
+          "c3.xlarge"   : { "Arch" : "HVM64"  },
+          "c3.2xlarge"  : { "Arch" : "HVM64"  },
+          "c3.4xlarge"  : { "Arch" : "HVM64"  },
+          "c3.8xlarge"  : { "Arch" : "HVM64"  },
+          "c4.large"    : { "Arch" : "HVM64"  },
+          "c4.xlarge"   : { "Arch" : "HVM64"  },
+          "c4.2xlarge"  : { "Arch" : "HVM64"  },
+          "c4.4xlarge"  : { "Arch" : "HVM64"  },
+          "c4.8xlarge"  : { "Arch" : "HVM64"  },
+          "g2.2xlarge"  : { "Arch" : "HVMG2"  },
+          "g2.8xlarge"  : { "Arch" : "HVMG2"  },
+          "r3.large"    : { "Arch" : "HVM64"  },
+          "r3.xlarge"   : { "Arch" : "HVM64"  },
+          "r3.2xlarge"  : { "Arch" : "HVM64"  },
+          "r3.4xlarge"  : { "Arch" : "HVM64"  },
+          "r3.8xlarge"  : { "Arch" : "HVM64"  },
+          "i2.xlarge"   : { "Arch" : "HVM64"  },
+          "i2.2xlarge"  : { "Arch" : "HVM64"  },
+          "i2.4xlarge"  : { "Arch" : "HVM64"  },
+          "i2.8xlarge"  : { "Arch" : "HVM64"  },
+          "d2.xlarge"   : { "Arch" : "HVM64"  },
+          "d2.2xlarge"  : { "Arch" : "HVM64"  },
+          "d2.4xlarge"  : { "Arch" : "HVM64"  },
+          "d2.8xlarge"  : { "Arch" : "HVM64"  },
+          "hi1.4xlarge" : { "Arch" : "HVM64"  },
+          "hs1.8xlarge" : { "Arch" : "HVM64"  },
+          "cr1.8xlarge" : { "Arch" : "HVM64"  },
+          "cc2.8xlarge" : { "Arch" : "HVM64"  }
+        },
+    
+        "AWSRegionArch2AMI" : {
+            "ap-south-1"       : {"HVM64" : "ami-011c99152163a87ae"},
+            "ap-southeast-1"   : {"HVM64" : "ami-018c1c51c7a13e363"},
+            "ap-southeast-2"   : {"HVM64" : "ami-05064bb33b40c33a2"}
+        }
+    
+    },
+
+    "Resources": {
+
+      "EC2SG" : {
+      "Type" : "AWS::EC2::SecurityGroup",
+      "Properties" : {
+        "GroupDescription" : "Instance security group",
+        "SecurityGroupIngress" : [
+          {"IpProtocol" : "tcp", "FromPort" : 80, "ToPort" : 80, "CidrIp" : "0.0.0.0/0"
+          },          
+          {
+            "IpProtocol" : "tcp",
+            "FromPort" : 22,
+            "ToPort" : 22,
+            "CidrIp" : "0.0.0.0/0"
+          }],
+        "VpcId":{"Ref":"myvpc"}
+        }
+        },
+
+        "myvpc": {
+            "Type": "AWS::EC2::VPC",
+            "Properties": {
+                "CidrBlock": {"Ref":"CidrBlock"},
+                "Tags": [
+                {"Key":"Name","Value":"VPC1"},
+                {"Key":"Network","Value":"Public"}
+                ]
+            }
+        },
+
+        "IG":{
+            "Type":"AWS::EC2::InternetGateway"
+        },
+
+        "GatewayAttach":{
+            "Type":"AWS::EC2::VPCGatewayAttachment",
+            "Properties":{
+                "InternetGatewayId":{"Ref":"IG"},
+                "VpcId":{"Ref":"myvpc"}
+            }
+        },
+
+        "RouteTable":{
+            "Type":"AWS::EC2::RouteTable",
+            "Properties":{
+                "VpcId":{"Ref":"myvpc"}
+            }
+        },
+
+        "PublicRoute":{
+            "Type":"AWS::EC2::Route",
+            "Properties":{
+                "DestinationCidrBlock":"0.0.0.0/0",
+                "GatewayId":{"Ref":"IG"},
+                "RouteTableId":{"Ref":"RouteTable"}
+            }
+        },
+
+        "subnet1":{
+            "Type":"AWS::EC2::Subnet",
+            "Properties":{
+                "MapPublicIpOnLaunch":"true",
+                "CidrBlock":{"Ref":"SubnetCidr1"},
+                "VpcId":{"Ref":"myvpc"},
+                "AvailabilityZone":{"Ref":"AZ1"},
+                "Tags":[
+                    {"Key":"Name","Value":{"Fn::Join":["",[{"Ref": "AWS::StackName"}, {"Ref": "AZ1"}]]}}
+                ]
+            }
+        },
+
+        "SubnetAssoc1":{
+            "Type":"AWS::EC2::SubnetRouteTableAssociation",
+            "Properties":{
+                "RouteTableId":{"Ref":"RouteTable"},
+                "SubnetId":{"Ref":"subnet1"}
+            }
+        },
+
+        "Instance": {
+            "Type": "AWS::EC2::Instance",
+            "DependsOn":"SubnetAssoc1",
+            "Properties": {
+                "ImageId" : { "Fn::FindInMap" : [ "AWSRegionArch2AMI", { "Ref" : "AWS::Region" },
+                          { "Fn::FindInMap" : [ "AWSInstanceType2Arch", { "Ref" : "EC2Type" }, "Arch" ] } ] },
+                "InstanceType" : {
+                     "Ref" : "EC2Type"
+                 },      
+                "SecurityGroupIds":[{"Ref":"EC2SG"}],
+                "SubnetId":{"Ref":"subnet1"},
+                "KeyName" : {
+                    "Ref" : "KeyName"
+                 },
+                "Tags": [
+                    {
+                        "Key": "Name",
+                        "Value": "EC2"
+                    }
+                ]
+            }
+        }
+    }
+}
